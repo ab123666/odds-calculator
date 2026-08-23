@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>赔率计算器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 520px;
+            margin-top: 20px;
+        }
+        h1 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 24px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .tab.active {
+            background: #fff;
+            color: #667eea;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .section { margin-bottom: 22px; }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .add-btn {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .add-btn:hover { background: #5a6fd6; }
+        .odds-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .odds-item label {
+            font-size: 13px;
+            color: #666;
+            min-width: 50px;
+        }
+        .odds-item input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .odds-item input:focus { border-color: #667eea; }
+        .remove-btn {
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+        .remove-btn:hover { background: #ee5a5a; }
+
+        /* 综合赔率样式 */
+        .comprehensive-odds {
+            text-align: left;
+            font-size: 15px;
+            color: #666;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #f0f0f0;
+        }
+        .comprehensive-odds span {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .input-group { margin-bottom: 22px; }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .input-stepper {
+            display: flex;
+            align-items: stretch;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 48px;
+            transition: border-color 0.2s;
+        }
+        .input-stepper:focus-within { border-color: #667eea; }
+        .stepper-btn {
+            width: 44px;
+            border: none;
+            background: #f5f5f5;
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .stepper-btn:hover { background: #e9e9e9; }
+        .stepper-btn:active { background: #ddd; }
+        .input-stepper input {
+            flex: 1;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+            outline: none;
+            height: 100%;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .warning.show { display: block; }
+        .results {
+            background: #f8f9fa;
+            border-radius: 14px;
+            padding: 20px;
+        }
+        .results-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 10px;
+            text-align: right;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        th {
+            color: #999;
+            font-weight: 500;
+            font-size: 12px;
+            background: #fafafa;
+        }
+        th:first-child, td:first-child { text-align: left; }
+        tr:last-child td { border-bottom: none; }
+        .summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .summary-item:first-child { grid-column: 1 / -1; }
+        .summary-item {
+            background: #fff;
+            padding: 14px;
+            border-radius: 10px;
+        }
+        .summary-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+        .summary-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        .summary-value.profit { color: #51cf66; }
+        .total-split { display: flex; justify-content: space-between; align-items: baseline; }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .container { padding: 24px 20px; margin-top: 10px; border-radius: 16px; }
+            h1 { font-size: 20px; margin-bottom: 20px; }
+            .tabs { margin-bottom: 20px; }
+            .tab { font-size: 13px; padding: 9px 6px; }
+            .section { margin-bottom: 18px; }
+            .input-group { margin-bottom: 18px; }
+            .input-stepper { height: 44px; }
+            .stepper-btn { width: 40px; }
+            .results { padding: 16px; border-radius: 12px; }
+            th, td { padding: 10px 8px; font-size: 13px; }
+            .summary-value { font-size: 18px; }
+            .summary-item { padding: 12px; }
+        }
+        @media (max-width: 360px) {
+            .container { padding: 20px 16px; }
+            h1 { font-size: 18px; }
+            .odds-item label { min-width: 42px; font-size: 12px; }
+            .input-stepper { height: 40px; }
+            .stepper-btn { width: 36px; font-size: 18px; }
+            .summary-value { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>赔率计算器</h1>
+
+        <div class="tabs">
+            <div class="tab active" data-mode="profit">目标净利润</div>
+            <div class="tab" data-mode="buy">总投入金额</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <span>基本赔率设置</span>
+                <button class="add-btn" id="addBtn">+ 添加</button>
+            </div>
+            <div id="oddsList"></div>
+            <div class="comprehensive-odds">
+                综合赔率：<span id="comprehensiveOdds">—</span>
+            </div>
+        </div>
+
+        <div class="section" id="recoverySection">
+            <div class="section-title">
+                <span>回本赔率设置</span>
+                <button class="add-btn" id="addRecoveryBtn">+ 添加</button>
+            </div>
+            <div id="recoveryOddsList"></div>
+            <div class="comprehensive-odds">
+                综合赔率：<span id="recoveryComprehensiveOdds">—</span>
+            </div>
+        </div>
+
+        <div class="input-group" id="profitInput">
+            <label>目标净利润（元）</label>
+            <div class="input-stepper">
+                <button class="stepper-btn" id="winMinus">−</button>
+                <input type="number" id="winInput" value="100" step="1" min="0" max="999999999">
+                <button class="stepper-btn" id="winPlus">+</button>
+            </div>
+        </div>
+
+        <div class="input-group" id="buyInput" style="display:none;">
+            <label>总投入金额（元）</label>
+            <div class="input-stepper">
+                <button class="stepper-btn" id="buyMinus">−</button>
+                <input type="number" id="buyInputValue" value="100" step="1" min="0" max="999999999">
+                <button class="stepper-btn" id="buyPlus">+</button>
+            </div>
+        </div>
+
+        <div class="warning" id="warning">无套利空间</div>
+
+        <div class="results">
+            <div class="results-title">基本赔率结果</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>选项</th>
+                        <th>赔率</th>
+                        <th>投注额</th>
+                        <th>净利润</th>
+                    </tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+            </table>
+            <div class="summary">
+                <div class="summary-item">
+                    <div class="summary-label">总投入</div>
+                    <div class="summary-value total-split">
+                        <span id="totalBuy">—</span>
+                        <span id="baseBuy">—</span>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">最小净利润</div>
+                    <div class="summary-value profit" id="minProfit">—</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">最大净利润</div>
+                    <div class="summary-value profit" id="maxProfit">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results" id="recoveryResults" style="display:none; margin-top:16px;">
+            <div class="results-title">回本赔率结果</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>选项</th>
+                        <th>赔率</th>
+                        <th>投注额</th>
+                        <th>净利润</th>
+                    </tr>
+                </thead>
+                <tbody id="recoveryResultBody"></tbody>
+            </table>
+            <div class="summary">
+                <div class="summary-item">
+                    <div class="summary-label">回本总投入</div>
+                    <div class="summary-value" id="recoveryTotalBuy">—</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">最小净利润</div>
+                    <div class="summary-value profit" id="recoveryMinProfit">—</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">最大净利润</div>
+                    <div class="summary-value profit" id="recoveryMaxProfit">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAX_VALUE = 999999999;
+        const MAX_SEARCH_S = 1e15;
+        let oddsList = ['', ''];
+        let recoveryOddsList = [''];
+        let currentMode = 'profit';
+        const $ = id => document.getElementById(id);
+        const clamp = v => Math.max(0, Math.min(parseFloat(v) || 0, MAX_VALUE));
+        const cap = v => v > MAX_VALUE ? MAX_VALUE : v;
+
+        function calcDiff(odds) {
+            let s = 1;
+            for (const p of odds) s -= 1 / p;
+            return s;
+        }
+
+        function calcMinEvenBet(gross, odds) {
+            let bet = Math.ceil(gross / odds);
+            if (bet & 1) bet++;
+            // 动态相对容差：覆盖浮点误差，上限0.5确保不会误判真实不满足的情况
+            const eps = Math.min(0.5, Math.max(1e-12, Math.abs(gross) * 1e-14));
+            // 向下收敛：如果更小的偶数也满足，就用更小的（修正 ceil 因浮点精度多进1）
+            while (bet >= 2 && (bet - 2) * odds >= gross - eps) bet -= 2;
+            // 向上兜底：确保当前满足条件
+            while (bet * odds < gross - eps) bet += 2;
+            return bet;
+        }
+
+        function calcPlan(odds, targetWin, S) {
+            const gross = S + targetWin;
+            const bets = odds.map(p => calcMinEvenBet(gross, p));
+            const sumBets = bets.reduce((a, b) => a + b, 0);
+            const profits = bets.map((bet, i) => bet * odds[i] - sumBets);
+            return { feasible: sumBets <= S, bets, sumBets, profits, minProfit: Math.min(...profits), maxProfit: Math.max(...profits) };
+        }
+
+        function findMinCost(odds, targetWin) {
+            const diff = calcDiff(odds);
+            if (diff <= 0) return null;
+            targetWin = Math.max(0, targetWin);
+            const theoryS = targetWin * (1 - diff) / diff;
+            if (!isFinite(theoryS) || theoryS < 0) return null;
+            let S = Math.floor(theoryS);
+            if (S & 1) S++;
+            if (S < 2) S = 2;
+            while (S <= MAX_SEARCH_S) {
+                const plan = calcPlan(odds, targetWin, S);
+                if (plan.feasible) return plan;
+                S += 2;
+            }
+            return null;
+        }
+
+        function findMaxWin(odds, budget) {
+            const diff = calcDiff(odds);
+            if (diff <= 0) return null;
+            const theoryWin = budget * diff / (1 - diff);
+            if (!isFinite(theoryWin) || theoryWin < 0) return null;
+            // 用 ceil 起点，从偏大的值向下递减，避免浮点精度算小时漏掉最大值
+            let win = Math.max(0, Math.min(MAX_VALUE, Math.ceil(theoryWin)));
+            let plan = findMinCost(odds, win);
+            // plan 为 null 时也继续递减，避免大利润超搜索上限时漏掉可行解
+            while (win > 0 && (!plan || plan.sumBets > budget)) { win--; plan = findMinCost(odds, win); }
+            return plan && plan.sumBets <= budget ? plan : null;
+        }
+
+        function parseOdds(list) {
+            return list.map(v => parseFloat(v)).filter(v => !isNaN(v)).map(v => Math.max(1, Math.min(v, MAX_VALUE)));
+        }
+
+        function renderOdds(list, containerId) {
+            $(containerId).innerHTML = list.map((v, i) => `
+                <div class="odds-item">
+                    <label>赔率${i + 1}</label>
+                    <input type="text" inputmode="decimal" value="${v ?? ''}" data-index="${i}">
+                    <button class="remove-btn" data-index="${i}">−</button>
+                </div>
+            `).join('');
+        }
+
+        function bindOddsEvents(containerId, list) {
+            const el = $(containerId);
+            el.addEventListener('input', e => {
+                if (e.target.matches('input')) {
+                    const idx = +e.target.dataset.index;
+                    let raw = e.target.value.replace(/[^\d.]/g, '');
+                    const dot = raw.indexOf('.');
+                    if (dot !== -1) raw = raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, '');
+                    if (raw !== e.target.value) e.target.value = raw;
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) {
+                        const clamped = Math.max(1, Math.min(val, MAX_VALUE));
+                        if (clamped !== val) e.target.value = clamped;
+                    }
+                    list[idx] = e.target.value;
+                    calculate();
+                }
+            });
+            el.addEventListener('click', e => {
+                if (e.target.matches('.remove-btn')) {
+                    const idx = +e.target.dataset.index;
+                    if (list.length > 1) list.splice(idx, 1); else list[idx] = '';
+                    renderOdds(list, containerId);
+                    calculate();
+                }
+            });
+            el.addEventListener('wheel', e => { if (e.target.matches('input')) e.preventDefault(); }, { passive: false });
+        }
+
+        function renderResult(result, odds, bodyId, totalId, minId, maxId) {
+            $(bodyId).innerHTML = result.bets.map((bet, i) => `
+                <tr>
+                    <td>赔率${i + 1}</td>
+                    <td>${odds[i].toFixed(2)}</td>
+                    <td>${cap(bet)}</td>
+                    <td style="color:#51cf66;">${cap(result.profits[i]).toFixed(2)}</td>
+                </tr>
+            `).join('');
+            $(totalId).textContent = cap(result.sumBets);
+            $(minId).textContent = cap(result.minProfit).toFixed(2);
+            $(maxId).textContent = cap(result.maxProfit).toFixed(2);
+        }
+
+        function renderEmpty() {
+            $('resultBody').innerHTML = '';
+            $('totalBuy').textContent = '—';
+            $('baseBuy').textContent = '—';
+            $('minProfit').textContent = '—';
+            $('maxProfit').textContent = '—';
+            $('recoveryResultBody').innerHTML = '';
+            $('recoveryTotalBuy').textContent = '—';
+            $('recoveryMinProfit').textContent = '—';
+            $('recoveryMaxProfit').textContent = '—';
+            $('recoveryResults').style.display = 'none';
+        }
+
+        function calculate() {
+            const odds = parseOdds(oddsList);
+            const recoveryOdds = parseOdds(recoveryOddsList);
+
+            $('comprehensiveOdds').textContent = odds.length ? cap(1 / (1 - calcDiff(odds))).toFixed(2) : '—';
+            $('recoveryComprehensiveOdds').textContent = recoveryOdds.length ? cap(1 / (1 - calcDiff(recoveryOdds))).toFixed(2) : '—';
+
+            if (odds.length < 1) { renderEmpty(); $('warning').classList.remove('show'); return; }
+            if (calcDiff(odds) <= 0) { renderEmpty(); $('warning').classList.add('show'); return; }
+            $('warning').classList.remove('show');
+
+            let result, recoveryResult = null;
+            if (currentMode === 'profit') {
+                result = findMinCost(odds, clamp($('winInput').value));
+                if (result && recoveryOdds.length > 0 && calcDiff(recoveryOdds) > 0) {
+                    recoveryResult = findMinCost(recoveryOdds, result.sumBets);
+                }
+                if (recoveryResult) {
+                    $('recoveryResults').style.display = 'block';
+                    renderResult(recoveryResult, recoveryOdds, 'recoveryResultBody', 'recoveryTotalBuy', 'recoveryMinProfit', 'recoveryMaxProfit');
+                } else {
+                    $('recoveryResults').style.display = 'none';
+                }
+            } else {
+                result = findMaxWin(odds, clamp($('buyInputValue').value));
+                $('recoveryResults').style.display = 'none';
+            }
+
+            if (!result) { renderEmpty(); $('warning').classList.add('show'); return; }
+            renderResult(result, odds, 'resultBody', 'totalBuy', 'minProfit', 'maxProfit');
+
+            // 有回本结果时：左边显示合计，右边显示基本总投入，净利润扣除回本投入
+            if (recoveryResult) {
+                $('totalBuy').textContent = cap(result.sumBets + recoveryResult.sumBets);
+                $('baseBuy').textContent = cap(recoveryResult.sumBets);
+                $('minProfit').textContent = cap(result.minProfit - recoveryResult.sumBets).toFixed(2);
+                $('maxProfit').textContent = cap(result.maxProfit - recoveryResult.sumBets).toFixed(2);
+            } else {
+                $('baseBuy').textContent = '';
+            }
+        }
+
+        // Tab 切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentMode = tab.dataset.mode;
+                $('profitInput').style.display = currentMode === 'profit' ? 'block' : 'none';
+                $('buyInput').style.display = currentMode === 'buy' ? 'block' : 'none';
+                $('recoverySection').style.display = currentMode === 'profit' ? 'block' : 'none';
+                calculate();
+            });
+        });
+
+        // 步进器
+        function bindStepper(btnMinus, btnPlus, inputEl) {
+            btnMinus.addEventListener('click', () => { inputEl.value = clamp(+inputEl.value - 1); calculate(); });
+            btnPlus.addEventListener('click', () => { inputEl.value = clamp(+inputEl.value + 1); calculate(); });
+            inputEl.addEventListener('input', () => { inputEl.value = clamp(inputEl.value); calculate(); });
+            inputEl.addEventListener('wheel', e => e.preventDefault());
+        }
+
+        // 目标净利润步进器：每次点击跳到下一个导致总投入变化的值
+        function bindProfitStepper() {
+            const inputEl = $('winInput');
+            function step(direction) {
+                const odds = parseOdds(oddsList);
+                const currentWin = clamp(+inputEl.value);
+                const currentResult = findMinCost(odds, currentWin);
+                if (!currentResult) { inputEl.value = clamp(currentWin + direction); calculate(); return; }
+                const currentSum = currentResult.sumBets;
+                let win = currentWin;
+                while (true) {
+                    win += direction;
+                    if (win < 0 || win > MAX_VALUE) break;
+                    const result = findMinCost(odds, win);
+                    if (result && result.sumBets !== currentSum) {
+                        inputEl.value = win;
+                        calculate();
+                        return;
+                    }
+                }
+                inputEl.value = clamp(win);
+                calculate();
+            }
+            $('winMinus').addEventListener('click', () => step(-1));
+            $('winPlus').addEventListener('click', () => step(1));
+            inputEl.addEventListener('input', () => { inputEl.value = clamp(inputEl.value); calculate(); });
+            inputEl.addEventListener('wheel', e => e.preventDefault());
+        }
+
+        bindProfitStepper();
+        bindStepper($('buyMinus'), $('buyPlus'), $('buyInputValue'));
+
+        // 赔率列表事件
+        bindOddsEvents('oddsList', oddsList);
+        bindOddsEvents('recoveryOddsList', recoveryOddsList);
+
+        // 添加按钮
+        $('addBtn').addEventListener('click', () => { oddsList.push(''); renderOdds(oddsList, 'oddsList'); calculate(); });
+        $('addRecoveryBtn').addEventListener('click', () => { recoveryOddsList.push(''); renderOdds(recoveryOddsList, 'recoveryOddsList'); calculate(); });
+
+        // 初始化
+        renderOdds(oddsList, 'oddsList');
+        renderOdds(recoveryOddsList, 'recoveryOddsList');
+        calculate();
+    </script>
+</body>
+</html>
